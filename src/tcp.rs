@@ -117,7 +117,7 @@ impl NetworkServerProvider for TcpServerProvider {
             }
             info!("Message read");
 
-            let packet: NetworkPacket = match bincode::deserialize(&buffer[..length]) {
+            let packet: NetworkPacket = match serde_json::from_slice(&buffer[..length]) {
                 Ok(packet) => packet,
                 Err(err) => {
                     error!("Failed to decode network packet from: {}", err);
@@ -139,7 +139,7 @@ impl NetworkServerProvider for TcpServerProvider {
         _settings: Self::NetworkSettings,
     ) {
         while let Ok(message) = messages.recv().await {
-            let encoded = match bincode::serialize(&message) {
+            let encoded = match serde_json::to_string(&message) {
                 Ok(encoded) => encoded,
                 Err(err) => {
                     error!("Could not encode packet {:?}: {}", message, err);
@@ -160,7 +160,7 @@ impl NetworkServerProvider for TcpServerProvider {
 
             trace!("Sending the content of the message!");
 
-            match write_half.write_all(&encoded).await {
+            match write_half.write_all(&encoded.as_bytes()).await {
                 Ok(_) => (),
                 Err(err) => {
                     error!("Could not send packet: {:?}: {}", message, err);
@@ -285,7 +285,7 @@ impl NetworkClientProvider for TcpClientProvider {
             }
             info!("Message read");
 
-            let packet: NetworkPacket = match bincode::deserialize(&buffer[..length]) {
+            let packet: NetworkPacket = match serde_json::from_slice(&buffer[..length]) {
                 Ok(packet) => packet,
                 Err(err) => {
                     error!("Failed to decode network packet from: {}", err);
@@ -308,7 +308,7 @@ impl NetworkClientProvider for TcpClientProvider {
         while let Ok(message) = messages.recv().await {
             info!("Sending message!");
 
-            let encoded = match bincode::serialize(&message) {
+            let encoded = match serde_json::to_string(&message) {
                 Ok(encoded) => encoded,
                 Err(err) => {
                     error!("Could not encode packet {:?}: {}", message, err);
@@ -329,7 +329,7 @@ impl NetworkClientProvider for TcpClientProvider {
 
             trace!("Sending the content of the message!");
 
-            match write_half.write_all(&encoded).await {
+            match write_half.write_all(&encoded.as_bytes()).await {
                 Ok(_) => (),
                 Err(err) => {
                     error!("Could not send packet: {:?}: {}", message, err);

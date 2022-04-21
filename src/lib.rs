@@ -216,7 +216,7 @@ impl ConnectionId {
 /// [`NetworkPacket`]s are untyped packets to be sent over the wire
 pub struct NetworkPacket {
     kind: String,
-    data: Vec<u8>,
+    data: String,
 }
 
 impl Debug for NetworkPacket {

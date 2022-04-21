@@ -61,7 +61,7 @@ pub trait NetworkClientProvider: 'static + Send + Sync {
 /// using [`NetworkClient::connect`]
 pub struct NetworkClient<NCP: NetworkClientProvider> {
     server_connection: Option<Connection>,
-    recv_message_map: Arc<DashMap<&'static str, Vec<Vec<u8>>>>,
+    recv_message_map: Arc<DashMap<&'static str, Vec<String>>>,
     network_events: AsyncChannel<ClientNetworkEvent>,
     connection_events: AsyncChannel<NCP::Socket>,
     connection_task: Option<Box<dyn JoinHandle>>,
@@ -137,7 +137,7 @@ impl<NCP: NetworkClientProvider> NetworkClient<NCP> {
 
         let packet = NetworkPacket {
             kind: String::from(T::NAME),
-            data: bincode::serialize(&message).unwrap(),
+            data: serde_json::to_string(&message).unwrap(),
         };
 
         match server_connection.send_message.try_send(packet) {
@@ -208,7 +208,7 @@ fn register_client_message<T, NCP: NetworkClientProvider>(
     events.send_batch(
         messages
             .drain(..)
-            .filter_map(|msg| bincode::deserialize::<T>(&msg).ok())
+            .filter_map(|msg| serde_json::from_str(&msg).ok())
             .map(|msg| NetworkData::<T>::new(ConnectionId::server(), msg)),
     );
 }

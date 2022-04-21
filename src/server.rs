@@ -59,7 +59,7 @@ pub trait NetworkServerProvider: 'static + Send + Sync {
 /// An instance of a [`NetworkServer`] is used to listen for new client connections
 /// using [`NetworkServer::listen`]
 pub struct NetworkServer<NSP: NetworkServerProvider> {
-    recv_message_map: Arc<DashMap<&'static str, Vec<(ConnectionId, Vec<u8>)>>>,
+    recv_message_map: Arc<DashMap<&'static str, Vec<(ConnectionId, String)>>>,
     established_connections: Arc<DashMap<ConnectionId, Connection>>,
     new_connections: AsyncChannel<NSP::Socket>,
     disconnected_connections: AsyncChannel<ConnectionId>,
@@ -127,7 +127,7 @@ impl<NSP: NetworkServerProvider> NetworkServer<NSP> {
 
         let packet = NetworkPacket {
             kind: String::from(T::NAME),
-            data: bincode::serialize(&message).unwrap(),
+            data: serde_json::to_string(&message).unwrap(),
         };
 
         match connection.send_message.try_send(packet) {
@@ -144,7 +144,7 @@ impl<NSP: NetworkServerProvider> NetworkServer<NSP> {
     /// Broadcast a message to all connected clients
     pub fn broadcast<T: ClientMessage + Clone>(&self, message: T) {
         for connection in self.established_connections.iter() {
-            let serialized_message = bincode::serialize(&message).unwrap();
+            let serialized_message = serde_json::to_string(&message).unwrap();
             let packet = NetworkPacket {
                 kind: String::from(T::NAME),
                 data: serialized_message,
@@ -299,7 +299,7 @@ fn register_server_message<T, NSP: NetworkServerProvider>(
     };
 
     events.send_batch(messages.drain(..).filter_map(|(source, msg)| {
-        bincode::deserialize::<T>(&msg)
+        serde_json::from_str(&msg)
             .ok()
             .map(|inner| NetworkData { source, inner })
     }));
