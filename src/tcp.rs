@@ -69,7 +69,7 @@ impl NetworkServerProvider for TcpServerProvider {
     ) {
         let mut buffer = vec![0; settings.max_packet_length];
         loop {
-            info!("Reading message length");
+            trace!("Reading message length");
             let length = match read_half.read(&mut buffer[..8]).await {
                 Ok(0) => {
                     // EOF, meaning the TCP stream has closed.
@@ -94,7 +94,7 @@ impl NetworkServerProvider for TcpServerProvider {
                     break;
                 }
             };
-            info!("Message length: {}", length);
+            debug!("Receiving new message of size: {}", length);
 
             if length > settings.max_packet_length {
                 error!(
@@ -104,7 +104,7 @@ impl NetworkServerProvider for TcpServerProvider {
                 break;
             }
 
-            info!("Reading message into buffer");
+            trace!("Reading message into buffer");
             match read_half.read_exact(&mut buffer[..length]).await {
                 Ok(()) => (),
                 Err(err) => {
@@ -115,7 +115,7 @@ impl NetworkServerProvider for TcpServerProvider {
                     break;
                 }
             }
-            info!("Message read");
+            trace!("Message read");
 
             let packet: NetworkPacket = match serde_json::from_slice(&buffer[..length]) {
                 Ok(packet) => packet,
@@ -129,7 +129,7 @@ impl NetworkServerProvider for TcpServerProvider {
                 error!("Failed to send decoded message to eventwork");
                 break;
             }
-            info!("Message deserialized and sent to eventwork");
+            trace!("Message deserialized and sent to eventwork");
         }
     }
 
