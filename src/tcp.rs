@@ -237,7 +237,7 @@ impl NetworkClientProvider for TcpClientProvider {
     ) {
         let mut buffer = vec![0; settings.max_packet_length];
         loop {
-            info!("Reading message length");
+            trace!("Reading message length");
             let length = match read_half.read(&mut buffer[..8]).await {
                 Ok(0) => {
                     // EOF, meaning the TCP stream has closed.
@@ -262,7 +262,7 @@ impl NetworkClientProvider for TcpClientProvider {
                     break;
                 }
             };
-            info!("Info read");
+            trace!("Info read");
 
             if length > settings.max_packet_length {
                 error!(
@@ -272,7 +272,7 @@ impl NetworkClientProvider for TcpClientProvider {
                 break;
             }
 
-            info!("Reading message into buffer");
+            trace!("Reading message into buffer");
             match read_half.read_exact(&mut buffer[..length]).await {
                 Ok(_) => (),
                 Err(err) => {
@@ -283,7 +283,7 @@ impl NetworkClientProvider for TcpClientProvider {
                     break;
                 }
             }
-            info!("Message read");
+            trace!("Message read");
 
             let packet: NetworkPacket = match serde_json::from_slice(&buffer[..length]) {
                 Ok(packet) => packet,
