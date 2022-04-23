@@ -140,7 +140,7 @@ impl NetworkServerProvider for TcpServerProvider {
     ) {
         while let Ok(message) = messages.recv().await {
             let encoded = match serde_json::to_string(&message) {
-                Ok(encoded) => encoded,
+                Ok(encoded) => encoded + "\n",
                 Err(err) => {
                     error!("Could not encode packet {:?}: {}", message, err);
                     continue;
